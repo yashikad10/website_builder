@@ -316,6 +316,7 @@ const Editor: React.FC = () => {
   const editorRef = useRef<any>(null);
   const [templates, setTemplates] = useState(components);
   const [activeTemplate, setActiveTemplate] = useState<string | null>(null);
+  const [selectedComponent, setSelectedComponent] = useState<any>(null);
 
   useEffect(() => {
     editorRef.current = grapesjs.init({
@@ -341,27 +342,31 @@ const Editor: React.FC = () => {
         ],
       },
       storageManager: false, // Disable storage manager
-      blockManager: {
-        appendTo: '#blocks',
-        blocks: [
+      styleManager: {
+        sectors: [
           {
-            id: 'section',
-            label: 'Section',
-            attributes: { class: 'gjs-block-section' },
-            content: `<section>
-              <h1>This is a section</h1>
-              <p>Text content for this section</p>
-            </section>`,
+            name: 'Typography',
+            open: true,
+            buildProps: ['font-family', 'font-size', 'font-weight', 'color', 'letter-spacing', 'line-height'],
+            properties: [
+              {
+                name: 'Text color',
+                property: 'color',
+                type: 'color',  // Color picker for text color
+              },
+            ],
           },
           {
-            id: 'text',
-            label: 'Text',
-            content: '<div data-gjs-type="text">Insert your text here</div>',
-          },
-          {
-            id: 'image',
-            label: 'Image',
-            content: { type: 'image' },
+            name: 'Background',
+            open: true,
+            buildProps: ['background-color'],
+            properties: [
+              {
+                name: 'Background color',
+                property: 'background-color',
+                type: 'color',  // Color picker for background color
+              },
+            ],
           },
         ],
       },
@@ -369,14 +374,17 @@ const Editor: React.FC = () => {
 
     const editor = editorRef.current;
 
-    // Event when the content changes
+    // Event when a component is selected
     editor.on('component:selected', () => {
       const selected = editor.getSelected();
-      const style = selected.getStyle();
-      const content = selected.get('content');
-      // Logic to set styles and content changes
-      console.log('Selected component style:', style);
-      console.log('Selected component content:', content);
+      const tagName = selected.get('tagName');
+
+      // Ensure the selected component contains text
+      if (['p', 'div', 'span', 'h1', 'h2', 'h3', 'h4'].includes(tagName)) {
+        setSelectedComponent(selected);
+      } else {
+        setSelectedComponent(null);
+      }
     });
 
     // Event when a block is dropped
@@ -396,7 +404,19 @@ const Editor: React.FC = () => {
   const exportHtml = useCallback(() => {
     if (editorRef.current) {
       const templateHtml = editorRef.current.getHtml();
-      const blob = new Blob([templateHtml], { type: "text/html" });
+      const templateCss = editorRef.current.getCss();
+
+      // Combine HTML and CSS
+      const fullHtml = `
+        <html>
+          <head>
+            <style>${templateCss}</style>
+          </head>
+          <body>${templateHtml}</body>
+        </html>
+      `;
+
+      const blob = new Blob([fullHtml], { type: "text/html" });
       const link = document.createElement("a");
 
       link.href = URL.createObjectURL(blob);
@@ -437,13 +457,42 @@ const Editor: React.FC = () => {
           ))}
         </div>
         <div className="col-span-8 h-full bg-gray-800" id="gjs"></div>
-        <div className="col-span-2 p-3">
-          {/* <div className="text-xl">Properties</div>
-          <Properties
-            active_element={null} // Will be updated based on selected element in GrapesJS
-            dom={[]} // Update this based on your dynamic dom state logic
-            setDom={() => {}} // Placeholder to update dom state
-          /> */}
+        <div className="col-span-2 p-3 bg-gray-950 border-l border-gray-700">
+          {/* Properties pane */}
+          {selectedComponent ? (
+            <div>
+              <h3 className="text-lg font-bold mb-2">Properties</h3>
+              <div className="flex flex-col gap-2">
+                <label className="flex flex-col">
+                  <span className="text-sm">Text Color</span>
+                  <input
+                    type="color"
+                    value={selectedComponent.getStyle().color || '#000000'}
+                    onChange={(e) => {
+                      const color = e.target.value;
+                      selectedComponent.addStyle({ 'color': color });
+                    }}
+                    className="mt-1"
+                  />
+                </label>
+                <label className="flex flex-col">
+                  <span className="text-sm">Background Color</span>
+                  <input
+                    type="color"
+                    value={selectedComponent.getStyle()['background-color'] || '#ffffff'}
+                    onChange={(e) => {
+                      const bgColor = e.target.value;
+                      selectedComponent.addStyle({ 'background-color': bgColor });
+                    }}
+                    className="mt-1"
+                  />
+                </label>
+                {/* Add more property controls here if needed */}
+              </div>
+            </div>
+          ) : (
+            <p>Select a text element to edit properties</p>
+          )}
         </div>
       </div>
     </div>
