@@ -10,7 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mui/icons-material": "^6.0.2",
+    "@mui/material": "^6.0.2",
     "grapesjs": "^0.21.13",
+    "grapesjs-tailwind": "^1.0.11",
     "html-react-parser": "^5.1.15",
     "immer": "^10.0.3",
     "lucide-react": "^0.331.0",
