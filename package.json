@@ -12,6 +12,7 @@
   "dependencies": {
     "@mui/icons-material": "^6.0.2",
     "@mui/material": "^6.0.2",
+    "bitcoin-wallet-adapter": "^1.6.5",
     "grapesjs": "^0.21.13",
     "grapesjs-tailwind": "^1.0.11",
     "html-react-parser": "^5.1.15",
